@@ -141,10 +141,14 @@ Birkaç ayrıntı:
 
 Varsayılan dala her push’ta `.github/workflows/deploy.yml` derlemeyi çalıştırıp sonucu GitHub
 Pages’e gönderir. Derleme `base: './'` ile yapıldığı için site alt yolda
-(`/Running-Animation/`) sorunsuz çalışır; ayrıca bir yapılandırma gerekmez.
+(`/Running-Animation/`) sorunsuz çalışır.
 
-Kendi hesabınızda yayınlamak isterseniz depoyu çatallayın, workflow’daki dal adını kendi
-varsayılan dalınızla değiştirin ve **Settings → Pages → Source** ayarını *GitHub Actions* yapın.
+Depoda **bir kez** yapılması gereken ayar: **Settings → Pages → Build and deployment → Source**
+seçeneğini *GitHub Actions* yapın. İş akışının jetonu dağıtım yapabiliyor ama Pages sitesini
+kendisi oluşturamıyor, bu yüzden ilk açma elle yapılıyor. Sonrasında her push otomatik yayınlanır.
+
+Kendi hesabınızda yayınlamak isterseniz depoyu çatallayıp workflow’daki dal adını kendi
+varsayılan dalınızla değiştirin.
 
 Strava’yı yayınlanmış sürümde kullanacaksanız Strava API uygulamanızın **Authorization Callback
 Domain** alanına sitenin alan adını (örn. `aligokten.github.io`) eklemeyi unutmayın.
