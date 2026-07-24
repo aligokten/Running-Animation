@@ -78,7 +78,9 @@ export const ribbonFragment = /* glsl */ `
 
     if (uGhost > 0.5) {
       if (lead >= 0.0) discard;
-      gl_FragColor = vec4(uGhostColor, core * 0.22);
+      // the preview of the route ahead is drawn as a thinner line down the
+      // middle of the ribbon, so it never competes with the trail already run
+      gl_FragColor = vec4(uGhostColor, smoothstep(0.5, 0.82, edge) * 0.3);
       return;
     }
 
