@@ -72,16 +72,19 @@ a {
   display: flex;
   align-items: center;
   gap: 13px;
+  min-width: 0;
 }
 
 .brand__mark {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(140deg, var(--accent), #ff9558);
-  color: #1a0a03;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: block;
+  object-fit: contain;
+}
+
+.brand__text {
+  min-width: 0;
 }
 
 .brand h1 {
@@ -126,9 +129,7 @@ a {
 @media (max-width: 1080px) {
   .app__main {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .app__stage {
-    position: static;
+    max-width: 620px;
   }
 }
 
@@ -303,7 +304,12 @@ a {
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+}
+
+.btn--full {
+  flex: 1 1 140px;
 }
 
 .btn {
@@ -329,10 +335,6 @@ a {
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-
-.btn--full {
-  flex: 1;
 }
 
 .btn--primary {
@@ -459,6 +461,7 @@ input[type='range']::-moz-range-thumb {
 
 .segmented {
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
   padding: 3px;
   border-radius: var(--radius-sm);
@@ -467,7 +470,8 @@ input[type='range']::-moz-range-thumb {
 }
 
 .segmented button {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 72px;
   padding: 7px 6px;
   border: none;
   border-radius: 6px;
@@ -629,9 +633,11 @@ input[type='range']::-moz-range-thumb {
 
 /* ---------------------------------------------------------------- themes */
 
+/* Every chooser grid is fluid: it fits as many cards as the column allows
+   rather than a fixed count, so nothing is clipped on a narrow phone. */
 .theme-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
   gap: 10px;
 }
 
@@ -645,7 +651,11 @@ input[type='range']::-moz-range-thumb {
   background: var(--bg-input);
   color: var(--text-dim);
   font-size: 12px;
+  line-height: 1.25;
   font-weight: 600;
+  text-align: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .theme-card.is-active {
@@ -675,7 +685,7 @@ input[type='range']::-moz-range-thumb {
 
 .palette-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(66px, 1fr));
   gap: 8px;
 }
 
@@ -712,11 +722,10 @@ input[type='range']::-moz-range-thumb {
 
 .palette-card__name {
   font-size: 10px;
+  line-height: 1.25;
   color: var(--text-dim);
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .palette-card.is-active .palette-card__name {
@@ -727,7 +736,7 @@ input[type='range']::-moz-range-thumb {
 
 .preset-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
   gap: 8px;
 }
 
@@ -818,4 +827,165 @@ input[type='range']::-moz-range-thumb {
   border-color: rgba(61, 220, 132, 0.3);
   background: rgba(61, 220, 132, 0.08);
   color: #9fe9c1;
+}
+
+/* ---------------------------------------------------------------- mobile */
+
+@media (max-width: 760px) {
+  body {
+    font-size: 15px;
+  }
+
+  /* The header scrolls away on a phone: vertical room is scarce and the
+     pinned preview below is what actually needs to stay in view. */
+  .app__bar {
+    position: static;
+    padding: 9px 14px;
+    padding-top: max(9px, env(safe-area-inset-top));
+  }
+
+  .brand__mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand h1 {
+    font-size: 15px;
+  }
+
+  .brand p {
+    font-size: 11.5px;
+    /* one line only, so the sticky preview keeps its height */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app__main {
+    padding: 0 12px 24px;
+    gap: 0;
+  }
+
+  /* The preview stays pinned under the header while the controls scroll,
+     so a setting can be judged without scrolling back up. */
+  .app__stage {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: 0 -12px;
+    padding: 10px 12px 12px;
+    background: var(--bg);
+    box-shadow: 0 12px 20px -14px rgba(0, 0, 0, 0.95);
+  }
+
+  .preview {
+    max-width: 100%;
+    gap: 9px;
+  }
+
+  .preview__frame {
+    border-radius: 16px;
+    padding: 5px;
+    display: flex;
+    justify-content: center;
+    box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .preview__screen {
+    border-radius: 12px;
+  }
+
+  /* letterbox inside the available height instead of overflowing it */
+  .preview__canvas {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 42vh;
+  }
+
+  .preview__busy {
+    inset: 5px;
+    border-radius: 12px;
+  }
+
+  .transport {
+    padding: 7px 11px;
+    gap: 10px;
+  }
+
+  .transport__play {
+    width: 32px;
+    height: 32px;
+  }
+
+  .app__controls {
+    gap: 12px;
+    padding-top: 14px;
+  }
+
+  .panel__head {
+    padding: 12px 14px 10px;
+  }
+
+  .panel__body {
+    padding: 14px;
+    gap: 13px;
+  }
+
+  .theme-grid {
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 8px;
+  }
+
+  .palette-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  }
+
+  .preset-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+
+  /* comfortable tap targets */
+  .toggle {
+    padding: 9px 4px;
+  }
+
+  .segmented button {
+    min-width: 64px;
+    padding: 9px 6px;
+  }
+
+  input[type='range'] {
+    height: 6px;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  .strava__list {
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 400px) {
+  .brand p {
+    display: none;
+  }
+
+  .theme-grid {
+    grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+  }
+
+  .palette-grid {
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  }
+}
+
+/* Landscape phones have almost no vertical room; shrink the pinned preview. */
+@media (max-width: 900px) and (max-height: 520px) {
+  .preview__canvas {
+    max-height: 56vh;
+  }
 }

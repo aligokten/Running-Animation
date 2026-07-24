@@ -264,19 +264,8 @@ export default function App() {
     <div className="app">
       <header className="app__bar">
         <div className="brand">
-          <span className="brand__mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="22" height="22">
-              <path
-                d="M4 19c3.5-1.2 5-4.2 6-7.5S12.8 5 16 4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-              <circle cx="17.5" cy="4" r="2.6" fill="currentColor" />
-            </svg>
-          </span>
-          <div>
+          <img className="brand__mark" src={`${import.meta.env.BASE_URL}logo.png`} alt="" />
+          <div className="brand__text">
             <h1>One More Step to Finish</h1>
             <p>Strava verilerinden 3B dikey koşu videosu</p>
           </div>

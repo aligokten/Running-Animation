@@ -72,6 +72,11 @@ Tema, ekran düzenini ve sahnenin karakterini belirler:
 | **Poster** | Dergi kapağı düzeni, büyük başlık, istatistik ızgarası |
 | **Yayın** | Spor yayını alt bantları, kayan split bildirimleri |
 | **Zen** | Yalnızca mesafe ve süre |
+| **Kronometre** | Dev süre sayacı, altında mesafe ve tempo |
+| **Yarış Numarası** | Göğüs numarası kartı ve yanda ilerleyen kilometre listesi |
+| **Kart** | Yuvarlak köşeli özet kartı, uygulama paylaşımı görünümü |
+| **Retro** | Tarama çizgileri ve kalın gölgeli tipografi |
+| **Bant** | Üstte ince künye, altta tek satırlık veri bandı |
 
 ## Renk paletleri
 

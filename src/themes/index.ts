@@ -19,7 +19,18 @@ export interface Palette {
   panel: string;
 }
 
-export type HudStyle = 'pulse' | 'minimal' | 'telemetry' | 'poster' | 'broadcast' | 'zen';
+export type HudStyle =
+  | 'pulse'
+  | 'minimal'
+  | 'telemetry'
+  | 'poster'
+  | 'broadcast'
+  | 'zen'
+  | 'chrono'
+  | 'bib'
+  | 'card'
+  | 'retro'
+  | 'ticker';
 
 export interface Theme {
   id: string;
@@ -309,6 +320,86 @@ export const THEMES: Theme[] = [
       particles: true,
     },
     defaultPalette: 'aurora',
+  },
+  {
+    id: 'chrono',
+    name: 'Kronometre',
+    description: 'Kadranı süre tutuyor: dev kronometre, altında mesafe ve tempo.',
+    hud: 'chrono',
+    fonts: { display: MONO, body: SANS, mono: MONO },
+    scene: {
+      curtainOpacity: 0.42,
+      routeGlow: 0.9,
+      gridStyle: 'dots',
+      trailScale: 0.95,
+      beam: true,
+      particles: false,
+    },
+    defaultPalette: 'mono',
+  },
+  {
+    id: 'bib',
+    name: 'Yarış Numarası',
+    description: 'Göğüs numarası düzeni ve yanda ilerleyen kilometre listesi.',
+    hud: 'bib',
+    fonts: { display: DISPLAY, body: SANS, mono: MONO },
+    scene: {
+      curtainOpacity: 0.45,
+      routeGlow: 0.85,
+      gridStyle: 'lines',
+      trailScale: 1,
+      beam: false,
+      particles: false,
+    },
+    defaultPalette: 'solar',
+  },
+  {
+    id: 'card',
+    name: 'Kart',
+    description: 'Altta duran yuvarlak köşeli özet kartı, uygulama paylaşımı gibi.',
+    hud: 'card',
+    fonts: { display: SANS, body: SANS, mono: MONO },
+    scene: {
+      curtainOpacity: 0.5,
+      routeGlow: 0.8,
+      gridStyle: 'dots',
+      trailScale: 1,
+      beam: false,
+      particles: true,
+    },
+    defaultPalette: 'sakura',
+  },
+  {
+    id: 'retro',
+    name: 'Retro',
+    description: 'Tarama çizgileri, kalın gölgeli tipografi, seksenler afişi.',
+    hud: 'retro',
+    fonts: { display: DISPLAY, body: SANS, mono: MONO },
+    scene: {
+      curtainOpacity: 0.6,
+      routeGlow: 1.2,
+      gridStyle: 'lines',
+      trailScale: 1.15,
+      beam: true,
+      particles: false,
+    },
+    defaultPalette: 'sunset',
+  },
+  {
+    id: 'ticker',
+    name: 'Bant',
+    description: 'Üstte ince künye, altta tek satırlık kayan veri bandı.',
+    hud: 'ticker',
+    fonts: { display: MONO, body: MONO, mono: MONO },
+    scene: {
+      curtainOpacity: 0.38,
+      routeGlow: 0.75,
+      gridStyle: 'lines',
+      trailScale: 0.8,
+      beam: false,
+      particles: false,
+    },
+    defaultPalette: 'forest',
   },
 ];
 

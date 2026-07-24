@@ -880,6 +880,447 @@ function drawZen(p: Painter, input: HudInput) {
   drawWatermark(p, input, p.H - 64);
 }
 
+function drawChrono(p: Painter, input: HudInput) {
+  const { palette, theme, options, frame } = input;
+  const M = 64;
+  const intro = easeOutCubic(clamp01(input.time / 0.9));
+  const { title } = headerLines(input);
+
+  if (options.showTitle) {
+    p.text(title.toUpperCase(), p.W / 2, 150, {
+      font: theme.fonts.body,
+      size: 20,
+      weight: 700,
+      color: palette.textDim,
+      align: 'center',
+      alpha: intro,
+      tracking: 5,
+    });
+  }
+
+  // the clock is the hero
+  const clock = formatDuration(frame.elapsed, true);
+  const bottom = p.H - 300;
+  p.text(clock, p.W / 2, bottom, {
+    font: theme.fonts.display,
+    size: 132,
+    weight: 700,
+    color: palette.text,
+    align: 'center',
+    glow: 24,
+    glowColor: withAlpha(palette.accent, 0.45),
+  });
+  p.text('GEÇEN SÜRE', p.W / 2, bottom - 150, {
+    font: theme.fonts.body,
+    size: 16,
+    weight: 700,
+    color: palette.accent,
+    align: 'center',
+    tracking: 6,
+  });
+
+  if (options.showStats) {
+    const u = options.units;
+    const cells: [string, string][] = [
+      [distanceLabel(u), formatDistance(frame.distance, u)],
+      [`TEMPO ${paceLabel(u)}`, formatPace(frame.speed, u)],
+      [elevationLabel(u), `+${formatElevation(frame.elevGain, u)}`],
+    ];
+    const colW = (p.W - M * 2) / cells.length;
+    cells.forEach(([label, value], i) => {
+      const cx = M + colW * i + colW / 2;
+      p.text(label, cx, bottom + 52, {
+        font: theme.fonts.body,
+        size: 14,
+        weight: 700,
+        color: palette.textDim,
+        align: 'center',
+        tracking: 3,
+      });
+      p.text(value, cx, bottom + 104, {
+        font: theme.fonts.display,
+        size: 46,
+        weight: 700,
+        color: palette.text,
+        align: 'center',
+      });
+      if (i > 0) {
+        p.line(M + colW * i, bottom + 30, M + colW * i, bottom + 116, palette.textDim, 1, 0.22);
+      }
+    });
+  }
+
+  if (options.showElevationProfile) {
+    drawProfile(p, input, M, p.H - 150, p.W - M * 2, 54, {
+      fillAlpha: 0.5,
+      showMarker: false,
+      lineWidth: 1.5,
+    });
+  }
+  if (options.showProgressBar) drawProgressBar(p, input, M, p.H - 84, p.W - M * 2, 6);
+  drawWatermark(p, input, p.H - 46);
+  if (options.showSplitToasts) drawSplitToast(p, input, 250, 'chip');
+}
+
+function drawBib(p: Painter, input: HudInput) {
+  const { palette, theme, options, frame, activity } = input;
+  const M = 56;
+  const intro = easeOutCubic(clamp01(input.time / 0.8));
+  const { title, subtitle } = headerLines(input);
+  const u = options.units;
+
+  // race bib pinned to the bottom
+  const bibW = p.W - M * 2;
+  const bibH = 300;
+  const bibY = p.H - bibH - 110;
+  p.fillRoundRect(M, bibY, bibW, bibH, 10, palette.panel, 1);
+  p.strokeRoundRect(M, bibY, bibW, bibH, 10, withAlpha(palette.textDim, 0.4), 1.5);
+  // pin holes
+  for (const x of [M + 30, M + bibW - 30]) p.circle(x, bibY + 26, 6, palette.textDim, 0.5);
+
+  if (options.showTitle) {
+    p.text(title.toUpperCase(), p.W / 2, bibY + 62, {
+      font: theme.fonts.body,
+      size: 17,
+      weight: 700,
+      color: palette.textDim,
+      align: 'center',
+      alpha: intro,
+      tracking: 4,
+    });
+  }
+
+  if (options.showBigDistance) {
+    const value = formatDistance(frame.distance, u);
+    p.text(value, p.W / 2, bibY + 190, {
+      font: theme.fonts.display,
+      size: 128,
+      weight: 400,
+      color: palette.text,
+      align: 'center',
+    });
+    p.text(distanceLabel(u), p.W / 2, bibY + 226, {
+      font: theme.fonts.body,
+      size: 18,
+      weight: 700,
+      color: palette.accent,
+      align: 'center',
+      tracking: 8,
+    });
+  }
+
+  p.line(M + 40, bibY + 250, M + bibW - 40, bibY + 250, palette.textDim, 1, 0.3);
+  if (options.showStats) {
+    const cells = [
+      formatDuration(frame.elapsed),
+      `${formatPace(frame.speed, u)}${paceLabel(u)}`,
+      `+${formatElevation(frame.elevGain, u)}${elevationLabel(u).toLowerCase()}`,
+    ];
+    const colW = bibW / cells.length;
+    cells.forEach((value, i) => {
+      p.text(value, M + colW * i + colW / 2, bibY + 282, {
+        font: theme.fonts.mono,
+        size: 24,
+        weight: 700,
+        color: palette.text,
+        align: 'center',
+      });
+    });
+  }
+
+  // completed splits stack up the right edge
+  if (options.showStats) {
+    const done = activity.splits.filter(
+      (s) => splitProgress(s, activity, input.pacing) <= input.progress,
+    );
+    const shown = done.slice(-6);
+    shown.forEach((split, i) => {
+      const y = 210 + i * 46;
+      const age = clamp01((input.progress - splitProgress(split, activity, input.pacing)) * 60);
+      p.text(`${split.index}`, p.W - M - 96, y, {
+        font: theme.fonts.mono,
+        size: 17,
+        weight: 700,
+        color: palette.accent,
+        align: 'right',
+        alpha: 0.35 + age * 0.65,
+      });
+      p.text(formatPace(1000 / Math.max(1, split.duration), u), p.W - M, y, {
+        font: theme.fonts.mono,
+        size: 22,
+        weight: 700,
+        color: palette.text,
+        align: 'right',
+        alpha: 0.35 + age * 0.65,
+      });
+    });
+    if (shown.length) {
+      p.text('SPLIT', p.W - M, 170, {
+        font: theme.fonts.body,
+        size: 13,
+        weight: 700,
+        color: palette.textDim,
+        align: 'right',
+        tracking: 4,
+      });
+    }
+  }
+
+  if (options.showTitle) {
+    p.text(subtitle, M, 160, {
+      font: theme.fonts.body,
+      size: 16,
+      weight: 600,
+      color: palette.textDim,
+      alpha: intro * 0.9,
+      tracking: 1,
+    });
+  }
+
+  if (options.showProgressBar) drawProgressBar(p, input, M, p.H - 78, p.W - M * 2, 6);
+  drawWatermark(p, input, p.H - 40);
+  if (options.showSplitToasts) drawSplitToast(p, input, 300, 'chip');
+}
+
+function drawCard(p: Painter, input: HudInput) {
+  const { palette, theme, options, frame } = input;
+  const M = 44;
+  const intro = easeOutCubic(clamp01(input.time / 0.8));
+  const { title, subtitle } = headerLines(input);
+  const u = options.units;
+
+  const cardH = options.showElevationProfile ? 400 : 320;
+  const cardY = p.H - cardH - 78;
+  const cardW = p.W - M * 2;
+
+  p.fillRoundRect(M, cardY, cardW, cardH, 30, palette.panel, 1);
+  p.strokeRoundRect(M, cardY, cardW, cardH, 30, withAlpha(palette.text, 0.1), 1.5);
+
+  const pad = 40;
+  if (options.showTitle) {
+    p.text(title, M + pad, cardY + 62, {
+      font: theme.fonts.body,
+      size: 30,
+      weight: 700,
+      color: palette.text,
+      alpha: intro,
+    });
+    p.text(subtitle, M + pad, cardY + 96, {
+      font: theme.fonts.body,
+      size: 16,
+      weight: 500,
+      color: palette.textDim,
+      alpha: intro * 0.9,
+    });
+  }
+
+  if (options.showBigDistance) {
+    const value = formatDistance(frame.distance, u);
+    p.text(value, M + pad, cardY + 200, {
+      font: theme.fonts.body,
+      size: 92,
+      weight: 700,
+      color: palette.text,
+    });
+    const w = p.measure(value, theme.fonts.body, 92, 700);
+    p.text(distanceLabel(u).toLowerCase(), M + pad + w + 12, cardY + 200, {
+      font: theme.fonts.body,
+      size: 24,
+      weight: 600,
+      color: palette.accent,
+    });
+  }
+
+  if (options.showStats) {
+    const cells: [string, string][] = [
+      ['Süre', formatDuration(frame.elapsed)],
+      ['Tempo', `${formatPace(frame.speed, u)}${paceLabel(u).toLowerCase()}`],
+      ['Yükseliş', `${formatElevation(frame.elevGain, u)} ${elevationLabel(u).toLowerCase()}`],
+    ];
+    if (options.showHeartRate && frame.hr) {
+      cells.push(['Nabız', `${Math.round(frame.hr)} bpm`]);
+    }
+    const colW = (cardW - pad * 2) / cells.length;
+    cells.forEach(([label, value], i) => {
+      const x = M + pad + colW * i;
+      p.text(label, x, cardY + 250, {
+        font: theme.fonts.body,
+        size: 14,
+        weight: 600,
+        color: palette.textDim,
+      });
+      p.text(value, x, cardY + 284, {
+        font: theme.fonts.body,
+        size: 26,
+        weight: 700,
+        color: palette.text,
+      });
+    });
+  }
+
+  if (options.showElevationProfile) {
+    drawProfile(p, input, M + pad, cardY + cardH - 40, cardW - pad * 2, 62, {
+      fillAlpha: 0.55,
+      lineWidth: 1.5,
+    });
+  }
+
+  if (options.showProgressBar) drawProgressBar(p, input, M + pad, p.H - 58, cardW - pad * 2, 6);
+  drawWatermark(p, input, p.H - 26);
+  if (options.showSplitToasts) drawSplitToast(p, input, 280, 'chip');
+}
+
+function drawRetro(p: Painter, input: HudInput) {
+  const { ctx } = p;
+  const { palette, theme, options, frame } = input;
+  const intro = easeOutCubic(clamp01(input.time / 0.9));
+  const { title, subtitle } = headerLines(input);
+  const u = options.units;
+
+  // scanlines across the whole frame
+  ctx.save();
+  ctx.globalAlpha = palette.light ? 0.05 : 0.12;
+  ctx.fillStyle = palette.bgBottom;
+  for (let y = 0; y < p.H; y += 5) ctx.fillRect(0, y, p.W, 2);
+  ctx.restore();
+
+  const shadow = (str: string, x: number, y: number, size: number, font: string) => {
+    p.text(str, x + 6, y + 6, {
+      font,
+      size,
+      color: palette.route[2],
+      align: 'center',
+      alpha: 0.85,
+    });
+    p.text(str, x, y, { font, size, color: palette.text, align: 'center' });
+  };
+
+  if (options.showTitle) {
+    p.text(subtitle.toUpperCase(), p.W / 2, 148, {
+      font: theme.fonts.body,
+      size: 16,
+      weight: 700,
+      color: palette.accent,
+      align: 'center',
+      alpha: intro,
+      tracking: 7,
+    });
+    shadow(title.toUpperCase(), p.W / 2, 226, 62, theme.fonts.display);
+    p.line(p.W / 2 - 150 * intro, 252, p.W / 2 + 150 * intro, 252, palette.accent, 3, intro);
+  }
+
+  const bottom = p.H - 270;
+  if (options.showBigDistance) {
+    shadow(`${formatDistance(frame.distance, u)} ${distanceLabel(u)}`, p.W / 2, bottom, 116, theme.fonts.display);
+  }
+
+  if (options.showStats) {
+    const cells = [
+      formatDuration(frame.elapsed),
+      `${formatPace(frame.speed, u)}${paceLabel(u)}`,
+      `+${formatElevation(frame.elevGain, u)}${elevationLabel(u).toLowerCase()}`,
+    ];
+    const colW = p.W / cells.length;
+    cells.forEach((value, i) => {
+      p.text(value, colW * i + colW / 2, bottom + 78, {
+        font: theme.fonts.display,
+        size: 46,
+        weight: 400,
+        color: palette.accent,
+        align: 'center',
+      });
+    });
+  }
+
+  if (options.showElevationProfile) {
+    drawProfile(p, input, 60, p.H - 130, p.W - 120, 56, {
+      fillAlpha: 0.65,
+      showMarker: false,
+      lineWidth: 2,
+    });
+  }
+  if (options.showProgressBar) drawProgressBar(p, input, 60, p.H - 72, p.W - 120, 10);
+  drawWatermark(p, input, p.H - 36);
+  if (options.showSplitToasts) drawSplitToast(p, input, 320, 'chip');
+}
+
+function drawTicker(p: Painter, input: HudInput) {
+  const { palette, theme, options, frame } = input;
+  const M = 40;
+  const u = options.units;
+  const { title, subtitle } = headerLines(input);
+  const intro = easeOutCubic(clamp01(input.time / 0.6));
+
+  // slim top slate
+  if (options.showTitle) {
+    p.fillRoundRect(M, 108, p.W - M * 2, 54, 4, palette.panel, intro);
+    p.fillRoundRect(M, 108, 5, 54, 0, palette.accent, intro);
+    p.text(title.toUpperCase(), M + 20, 142, {
+      font: theme.fonts.mono,
+      size: 21,
+      weight: 700,
+      color: palette.text,
+      alpha: intro,
+      tracking: 1,
+    });
+    p.text(subtitle, p.W - M - 20, 142, {
+      font: theme.fonts.mono,
+      size: 14,
+      weight: 400,
+      color: palette.textDim,
+      align: 'right',
+      alpha: intro,
+    });
+  }
+
+  // one-line data band along the bottom
+  const bandH = 92;
+  const bandY = p.H - bandH - 74;
+  p.fillRoundRect(M, bandY, p.W - M * 2, bandH, 4, palette.panel, 1);
+
+  const cells: [string, string][] = [
+    [distanceLabel(u), formatDistance(frame.distance, u)],
+    ['SÜRE', formatDuration(frame.elapsed)],
+    [paceLabel(u).slice(1), formatPace(frame.speed, u)],
+    [elevationLabel(u), `+${formatElevation(frame.elevGain, u)}`],
+  ];
+  if (options.showHeartRate && frame.hr) cells.push(['BPM', `${Math.round(frame.hr)}`]);
+
+  const colW = (p.W - M * 2) / cells.length;
+  cells.forEach(([label, value], i) => {
+    const cx = M + colW * i + colW / 2;
+    p.text(label, cx, bandY + 32, {
+      font: theme.fonts.mono,
+      size: 12,
+      weight: 400,
+      color: palette.textDim,
+      align: 'center',
+      tracking: 3,
+    });
+    p.text(value, cx, bandY + 72, {
+      font: theme.fonts.mono,
+      size: 30,
+      weight: 700,
+      color: palette.text,
+      align: 'center',
+    });
+    if (i > 0) {
+      p.line(M + colW * i, bandY + 18, M + colW * i, bandY + bandH - 18, palette.textDim, 1, 0.2);
+    }
+  });
+
+  if (options.showElevationProfile) {
+    drawProfile(p, input, M, bandY - 20, p.W - M * 2, 70, {
+      fillAlpha: 0.45,
+      showMarker: false,
+      lineWidth: 1.2,
+    });
+  }
+  if (options.showProgressBar) drawProgressBar(p, input, M, p.H - 58, p.W - M * 2, 5);
+  drawWatermark(p, input, p.H - 28);
+  if (options.showSplitToasts) drawSplitToast(p, input, 230, 'chip');
+}
+
 const RENDERERS: Record<string, (p: Painter, input: HudInput) => void> = {
   pulse: drawPulse,
   minimal: drawMinimal,
@@ -887,6 +1328,11 @@ const RENDERERS: Record<string, (p: Painter, input: HudInput) => void> = {
   poster: drawPoster,
   broadcast: drawBroadcast,
   zen: drawZen,
+  chrono: drawChrono,
+  bib: drawBib,
+  card: drawCard,
+  retro: drawRetro,
+  ticker: drawTicker,
 };
 
 export function drawHud(input: HudInput) {

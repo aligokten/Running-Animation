@@ -93,6 +93,33 @@ function ThemeThumb({ hud, palette }: { hud: string; palette: (typeof PALETTES)[
       { x: 8, y: 46, w: 48, h: 18, accent: true },
     ],
     zen: [{ x: 18, y: 44, w: 28, h: 10, accent: true }],
+    chrono: [
+      { x: 20, y: 8, w: 24, h: 3 },
+      { x: 10, y: 40, w: 44, h: 12, accent: true },
+      { x: 12, y: 58, w: 12, h: 4 },
+      { x: 26, y: 58, w: 12, h: 4 },
+      { x: 40, y: 58, w: 12, h: 4 },
+    ],
+    bib: [
+      { x: 8, y: 10, w: 22, h: 3 },
+      { x: 46, y: 22, w: 10, h: 3 },
+      { x: 46, y: 30, w: 10, h: 3 },
+      { x: 10, y: 44, w: 44, h: 20, accent: true },
+    ],
+    card: [
+      { x: 10, y: 44, w: 44, h: 22, accent: true },
+      { x: 14, y: 48, w: 20, h: 4 },
+      { x: 14, y: 56, w: 30, h: 6 },
+    ],
+    retro: [
+      { x: 14, y: 12, w: 36, h: 8 },
+      { x: 10, y: 42, w: 44, h: 12, accent: true },
+      { x: 10, y: 60, w: 44, h: 4 },
+    ],
+    ticker: [
+      { x: 8, y: 8, w: 48, h: 6 },
+      { x: 8, y: 52, w: 48, h: 12, accent: true },
+    ],
   };
   const items = bars[hud] ?? bars.pulse;
   return (
