@@ -10,6 +10,8 @@ indirilir.
 
 Her şey tarayıcıda çalışır. GPS verisi hiçbir sunucuya gönderilmez.
 
+**Canlı sürüm:** <https://aligokten.github.io/Running-Animation/>
+
 ---
 
 ## Hızlı başlangıç
@@ -134,6 +136,18 @@ Birkaç ayrıntı:
   Dışa aktarmanın önizlemeyle birebir aynı çıkmasının nedeni budur.
 - **Örnekleme.** Aktivite başına tüm arama tabloları bir kez hesaplanır, böylece kare başına
   örnekleme bellek ayırmaz.
+
+## Yayınlama
+
+Varsayılan dala her push’ta `.github/workflows/deploy.yml` derlemeyi çalıştırıp sonucu GitHub
+Pages’e gönderir. Derleme `base: './'` ile yapıldığı için site alt yolda
+(`/Running-Animation/`) sorunsuz çalışır; ayrıca bir yapılandırma gerekmez.
+
+Kendi hesabınızda yayınlamak isterseniz depoyu çatallayın, workflow’daki dal adını kendi
+varsayılan dalınızla değiştirin ve **Settings → Pages → Source** ayarını *GitHub Actions* yapın.
+
+Strava’yı yayınlanmış sürümde kullanacaksanız Strava API uygulamanızın **Authorization Callback
+Domain** alanına sitenin alan adını (örn. `aligokten.github.io`) eklemeyi unutmayın.
 
 ## Gereksinimler
 
