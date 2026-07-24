@@ -561,6 +561,27 @@ input[type='range']::-moz-range-thumb {
   line-height: 1.55;
 }
 
+.strava__lead strong {
+  color: var(--text);
+}
+
+.strava__steps {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+.strava__steps::marker,
+.strava__steps li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .strava code {
   font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
   font-size: 11px;

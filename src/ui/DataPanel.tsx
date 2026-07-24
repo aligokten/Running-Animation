@@ -166,13 +166,38 @@ export function DataPanel({
       {showStrava && (
         <div className="strava">
           <p className="strava__lead">
-            Strava API’si kişisel bir uygulama gerektirir.{' '}
-            <a href="https://www.strava.com/settings/api" target="_blank" rel="noreferrer">
-              strava.com/settings/api
-            </a>{' '}
-            adresinden oluşturup <code>Authorization Callback Domain</code> alanına{' '}
-            <code>{window.location.hostname}</code> yazın.
+            <strong>En kolay yol bu değil:</strong> Strava’da aktiviteyi açıp “…” →{' '}
+            <em>Export GPX</em> ile indirdiğiniz dosyayı yukarı bırakmanız yeterli. API’yi
+            yalnızca aktivitelerinizi buradan listelemek isterseniz kurun.
           </p>
+          <ol className="strava__steps">
+            <li>
+              <a href="https://www.strava.com/settings/api" target="_blank" rel="noreferrer">
+                strava.com/settings/api
+              </a>{' '}
+              adresini açın. Bu sayfa Strava’yı Türkçe kullansanız da İngilizce görünür ve
+              menüden ulaşmak zordur, doğrudan bağlantıyı kullanın.
+            </li>
+            <li>
+              Bir uygulamanız yoksa formu doldurup oluşturun. Client ID ve Secret hazır durmaz,
+              ancak uygulamayı oluşturunca üretilir.
+            </li>
+            <li>
+              <code>Authorization Callback Domain</code> alanına <code>https://</code> olmadan
+              yalnızca <code>{window.location.hostname}</code> yazın.
+            </li>
+            <li>
+              Oluşan sayfada <code>Client ID</code> açıkta, <code>Client Secret</code> ise{' '}
+              <em>Show</em> bağlantısının arkasında gizlidir.
+            </li>
+          </ol>
+          {window.location.protocol === 'https:' && (
+            <p className="strava__hint">
+              Not: Strava’nın jeton değişimi bazı tarayıcılarda CORS nedeniyle engellenir. Bunun
+              için yazılan yerel proxy yalnızca uygulamayı kendi bilgisayarınızda çalıştırırken
+              devreye girebilir. Burada takılırsanız GPX yolu her koşulda çalışır.
+            </p>
+          )}
 
           {!connected ? (
             <>
