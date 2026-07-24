@@ -129,13 +129,23 @@ export function DataPanel({
         }}
       >
         <strong>GPX veya TCX dosyası bırakın</strong>
-        <span>Strava’da aktivite → “Export GPX” ile indirebilirsiniz</span>
+        <span>Strava’da aktivite → “…” → “Export GPX” ile indirebilirsiniz</span>
+        {/*
+          No `accept` filter on purpose: mobile file pickers grey out .gpx
+          files when they cannot map the extension to a known MIME type, which
+          makes the file impossible to pick at all. The type is verified after
+          selection instead, where a wrong file gets a useful message.
+        */}
         <input
           ref={fileInput}
           type="file"
-          accept=".gpx,.tcx,application/gpx+xml,application/xml,text/xml"
           hidden
-          onChange={(e) => handleFiles(e.target.files)}
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            handleFiles(e.target.files);
+            // let the same file be picked again after a failed attempt
+            e.target.value = '';
+          }}
         />
       </div>
 

@@ -136,15 +136,61 @@ export function parseTcx(text: string, fileName: string): Activity {
   });
 }
 
+/** Reads the first bytes so binary formats can be named in the error message. */
+async function sniff(file: File): Promise<'gzip' | 'zip' | 'fit' | 'text'> {
+  const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  if (head[0] === 0x1f && head[1] === 0x8b) return 'gzip';
+  if (head[0] === 0x50 && head[1] === 0x4b) return 'zip';
+  // A FIT file carries the ASCII tag ".FIT" at offset 8.
+  const tag = String.fromCharCode(head[8], head[9], head[10], head[11]);
+  if (tag === '.FIT') return 'fit';
+  return 'text';
+}
+
+async function gunzip(file: File): Promise<string> {
+  if (typeof DecompressionStream === 'undefined') {
+    throw new Error(
+      'Bu tarayıcı sıkıştırılmış dosyaları açamıyor. Dosyayı açıp içindeki .gpx dosyasını yükleyin.',
+    );
+  }
+  const stream = file.stream().pipeThrough(new DecompressionStream('gzip'));
+  return new Response(stream).text();
+}
+
+/**
+ * Accepts whatever Strava hands out. The activity page's "Export GPX" gives a
+ * plain .gpx, but the bulk account export packs the same data as .gpx.gz, and
+ * "Export Original" can hand back a Garmin .fit — which is a different format
+ * entirely and worth naming rather than failing vaguely.
+ */
 export async function parseActivityFile(file: File): Promise<Activity> {
-  const text = await file.text();
-  const lower = file.name.toLowerCase();
-  if (lower.endsWith('.tcx')) return parseTcx(text, file.name);
-  if (lower.endsWith('.gpx')) return parseGpx(text, file.name);
+  const kind = await sniff(file);
+
+  if (kind === 'fit') {
+    throw new Error(
+      'Bu bir FIT dosyası (Garmin kaydı) ve bu uygulama FIT okumuyor. ' +
+        'Strava’da aktiviteyi açıp “…” menüsünden “Export Original” yerine “Export GPX” seçin.',
+    );
+  }
+  if (kind === 'zip') {
+    throw new Error(
+      'Bu bir ZIP arşivi. İçinden çıkan .gpx dosyasını arşivden çıkarıp yükleyin.',
+    );
+  }
+
+  const text = kind === 'gzip' ? await gunzip(file) : await file.text();
+  // ".gpx.gz" -> ".gpx", so the activity keeps a sensible name
+  const name = kind === 'gzip' ? file.name.replace(/\.gz$/i, '') : file.name;
+  const lower = name.toLowerCase();
+
+  if (lower.endsWith('.tcx')) return parseTcx(text, name);
+  if (lower.endsWith('.gpx')) return parseGpx(text, name);
   // Fall back on sniffing the contents so oddly named exports still work.
-  if (text.includes('<TrainingCenterDatabase')) return parseTcx(text, file.name);
-  if (text.includes('<gpx')) return parseGpx(text, file.name);
+  if (text.includes('<TrainingCenterDatabase')) return parseTcx(text, name);
+  if (text.includes('<gpx')) return parseGpx(text, name);
+
   throw new Error(
-    'Desteklenmeyen dosya türü. Strava’dan “Export GPX” ile indirdiğiniz .gpx veya .tcx dosyasını yükleyin.',
+    `“${file.name}” tanınmadı. Strava’da aktiviteyi açıp “…” → “Export GPX” ile indirdiğiniz ` +
+      '.gpx dosyasını (ya da bir .tcx dosyasını) yükleyin.',
   );
 }
