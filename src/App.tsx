@@ -45,6 +45,7 @@ const DEFAULT_HUD: HudOptions = {
   showWatermark: true,
   showLogo: true,
   showHeartRate: true,
+  safeArea: 'story',
   units: 'metric',
 };
 

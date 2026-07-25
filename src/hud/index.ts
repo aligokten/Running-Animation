@@ -14,7 +14,7 @@ import {
   formatPace,
   paceLabel,
 } from '../lib/format';
-import { Painter, clamp01, easeOutCubic } from './draw';
+import { Painter, clamp01, easeOutCubic, type SafeInsets } from './draw';
 
 export interface HudInput {
   ctx: CanvasRenderingContext2D;
@@ -1499,11 +1499,30 @@ const RENDERERS: Record<string, (p: Painter, input: HudInput) => void> = {
   ticker: drawTicker,
 };
 
+/**
+ * Insets in design-space units, i.e. against a 1080-wide frame.
+ * Instagram covers roughly the top 13% of a story with the profile photo and
+ * name, and the bottom with the reply bar; Reels needs more room underneath
+ * for the caption and the action buttons.
+ */
+const SAFE_INSETS: Record<string, SafeInsets> = {
+  none: { top: 0, bottom: 0 },
+  story: { top: 250, bottom: 250 },
+  reels: { top: 210, bottom: 430 },
+};
+
 export function drawHud(input: HudInput) {
-  const p = new Painter(input.ctx, input.width, input.height);
-  p.begin();
+  const insets = SAFE_INSETS[input.options.safeArea] ?? SAFE_INSETS.none;
+  const p = new Painter(input.ctx, input.width, input.height, insets);
+
+  // The backdrop and the 3D-anchored labels ignore the safe area: one covers
+  // the whole frame, the other has to stay on top of what it marks.
+  p.beginFull();
   p.vignette(input.palette.bgBottom, input.palette.light ? 0.35 : 0.72);
   drawWorldLabels(p, input);
+  p.end();
+
+  p.begin();
   (RENDERERS[input.theme.hud] ?? drawPulse)(p, input);
   p.end();
 }

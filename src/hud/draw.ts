@@ -20,23 +20,54 @@ export interface TextOptions {
  * in the 1080-wide design space and scaled up or down to the real canvas, so
  * a 720p export is pixel-identical in layout to a 4K one.
  */
+export interface SafeInsets {
+  top: number;
+  bottom: number;
+}
+
 export class Painter {
   readonly ctx: CanvasRenderingContext2D;
   /** design-space width (always 1080) */
   readonly W: number;
+  /**
+   * Drawable height. This is the frame minus the safe insets, so a theme that
+   * anchors to `0` or to `H` lands inside the safe area without knowing the
+   * insets exist — `begin()` shifts the origin down by the top inset.
+   */
   readonly H: number;
+  /** full frame height in design space, ignoring the insets */
+  readonly fullH: number;
+  readonly insets: SafeInsets;
   /** scale from design space to device pixels */
   readonly s: number;
 
-  constructor(ctx: CanvasRenderingContext2D, width: number, height: number) {
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    insets: SafeInsets = { top: 0, bottom: 0 },
+  ) {
     this.ctx = ctx;
     this.s = width / 1080;
     this.W = 1080;
-    this.H = height / this.s;
+    this.fullH = height / this.s;
+    this.insets = insets;
+    this.H = Math.max(400, this.fullH - insets.top - insets.bottom);
   }
 
-  /** Wrap a block of drawing in the design-space transform. */
+  /** Wrap a block of drawing in the design-space, safe-area transform. */
   begin() {
+    this.ctx.save();
+    this.ctx.scale(this.s, this.s);
+    this.ctx.translate(0, this.insets.top);
+  }
+
+  /**
+   * Design space over the whole frame, insets ignored. Used by the backdrop
+   * and by anything positioned from the 3D scene, which must stay pinned to
+   * what it marks on screen.
+   */
+  beginFull() {
     this.ctx.save();
     this.ctx.scale(this.s, this.s);
   }
@@ -141,19 +172,19 @@ export class Painter {
 
   /** Darkens the frame edges so the HUD keeps its contrast over bright scenes. */
   vignette(color: string, strength: number) {
-    const { ctx } = this;
+    const { ctx, fullH } = this;
     ctx.save();
-    const grad = ctx.createLinearGradient(0, this.H * 0.45, 0, this.H);
+    const grad = ctx.createLinearGradient(0, fullH * 0.45, 0, fullH);
     grad.addColorStop(0, withAlpha(color, 0));
     grad.addColorStop(1, withAlpha(color, strength));
     ctx.fillStyle = grad;
-    ctx.fillRect(0, this.H * 0.45, this.W, this.H * 0.55);
+    ctx.fillRect(0, fullH * 0.45, this.W, fullH * 0.55);
 
-    const top = ctx.createLinearGradient(0, 0, 0, this.H * 0.28);
+    const top = ctx.createLinearGradient(0, 0, 0, fullH * 0.28);
     top.addColorStop(0, withAlpha(color, strength * 0.75));
     top.addColorStop(1, withAlpha(color, 0));
     ctx.fillStyle = top;
-    ctx.fillRect(0, 0, this.W, this.H * 0.28);
+    ctx.fillRect(0, 0, this.W, fullH * 0.28);
     ctx.restore();
   }
 }

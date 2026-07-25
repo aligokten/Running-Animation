@@ -78,6 +78,13 @@ export interface Frame {
 
 export type Units = 'metric' | 'imperial';
 
+/**
+ * Keeps the overlay clear of the platform's own chrome.
+ * 'story' avoids the profile photo at the top and the reply bar at the bottom,
+ * 'reels' leaves the taller caption and action stack alone.
+ */
+export type SafeArea = 'none' | 'story' | 'reels';
+
 export type CameraMode = 'cinematic' | 'follow' | 'orbit' | 'topdown';
 
 export type PacingMode = 'distance' | 'time';
@@ -141,6 +148,7 @@ export interface HudOptions {
   /** draw the app logo alongside the signature */
   showLogo: boolean;
   showHeartRate: boolean;
+  safeArea: SafeArea;
   units: Units;
 }
 

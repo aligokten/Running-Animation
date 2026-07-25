@@ -2,6 +2,7 @@ import type {
   CameraMode,
   HudOptions,
   PacingMode,
+  SafeArea,
   SceneOptions,
   TerrainMode,
   Units,
@@ -175,6 +176,25 @@ export function HudPanel({
           value={options.subtitle}
           onChange={(v) => set('subtitle', v)}
           placeholder="İstanbul · Pazar sabahı"
+        />
+      </Field>
+
+      <Field
+        label="Güvenli alan"
+        hint={
+          options.safeArea === 'none'
+            ? 'tüm kare kullanılır'
+            : 'platform arayüzünün altında kalmaz'
+        }
+      >
+        <Segmented<SafeArea>
+          value={options.safeArea}
+          onChange={(v) => set('safeArea', v)}
+          options={[
+            { value: 'none', label: 'Kapalı' },
+            { value: 'story', label: 'Story' },
+            { value: 'reels', label: 'Reels' },
+          ]}
         />
       </Field>
 

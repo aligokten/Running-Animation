@@ -124,6 +124,21 @@ bir şey olmadığı için oralar interpolasyondur. Arazi yüksekliği ayrıca �
 - Başlık/alt başlık metni, birim (km / mil) ve her veri bloğunun açık-kapalı durumu
 - Uygulama logosu ve imzası videonun altına işlenir; ikisi de ayrı ayrı kapatılabilir
 
+## Güvenli alan
+
+Instagram, story'nin üstünü profil fotoğrafı ve kullanıcı adıyla, altını yanıt çubuğuyla kapatır.
+Overlay'i bunların altında bırakmamak için üç ayar var:
+
+| Ayar | Bırakılan boşluk (1080×1920 için) |
+| --- | --- |
+| **Kapalı** | yok, tüm kare kullanılır |
+| **Story** | üstte ve altta 250 px |
+| **Reels** | üstte 210 px, altta 430 px (uzun açıklama ve buton yığını için) |
+
+Varsayılan **Story**. Ayar yalnızca metin katmanını içeri çeker; 3B sahne, arka plan ve kilometre
+işaretleri kareyi doldurmaya devam eder — kilometre baloncukları haritadaki noktalarına bağlı
+kaldığı için kaydırılmaz.
+
 ## Video dışa aktarma
 
 | | |
