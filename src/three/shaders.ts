@@ -139,6 +139,71 @@ export const groundFragment = /* glsl */ `
   }
 `;
 
+export const terrainVertex = /* glsl */ `
+  varying vec3 vWorld;
+  varying vec3 vNormal;
+
+  void main() {
+    vec4 world = modelMatrix * vec4(position, 1.0);
+    vWorld = world.xyz;
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * viewMatrix * world;
+  }
+`;
+
+/**
+ * Two looks over the same surface: a contour map drawn from the height field,
+ * or a shaded relief. Both tint by altitude so the shape reads even flat on.
+ */
+export const terrainFragment = /* glsl */ `
+  precision highp float;
+  uniform vec3 uLow;
+  uniform vec3 uHigh;
+  uniform vec3 uLine;
+  uniform float uInterval;
+  uniform float uMinY;
+  uniform float uMaxY;
+  uniform float uRadius;
+  uniform float uOpacity;
+  uniform float uMode;      // 0 = contours, 1 = relief
+  varying vec3 vWorld;
+  varying vec3 vNormal;
+
+  float band(float h, float interval) {
+    float f = fract(h / interval);
+    float d = min(f, 1.0 - f) * interval;
+    float w = fwidth(h) * 1.1 + 1e-4;
+    return 1.0 - smoothstep(0.0, w, d);
+  }
+
+  void main() {
+    float t = clamp((vWorld.y - uMinY) / max(0.001, uMaxY - uMinY), 0.0, 1.0);
+    vec3 col = mix(uLow, uHigh, t);
+
+    // a wide radial fade so the square edge of the tile never shows
+    float fade = 1.0 - smoothstep(uRadius * 0.26, uRadius * 0.48, length(vWorld.xz));
+    float alpha = uOpacity * fade;
+
+    if (uMode < 0.5) {
+      // every fifth line is drawn heavier, the way an index contour is
+      float minor = band(vWorld.y, uInterval);
+      float major = band(vWorld.y, uInterval * 5.0);
+      float line = clamp(minor * 0.5 + major, 0.0, 1.0);
+      col = mix(col * 0.55, uLine, line);
+      alpha *= 0.28 + line * 0.72;
+    } else {
+      vec3 light = normalize(vec3(-0.45, 0.82, 0.36));
+      float lambert = 0.45 + 0.55 * max(0.0, dot(normalize(vNormal), light));
+      col *= lambert;
+      // a faint contour keeps the topographic reading in relief mode too
+      alpha *= 0.85;
+      col = mix(col, uLine, band(vWorld.y, uInterval * 5.0) * 0.35);
+    }
+
+    gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));
+  }
+`;
+
 export const particleVertex = /* glsl */ `
   attribute float aSeed;
   uniform float uTime;

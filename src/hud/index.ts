@@ -1,7 +1,8 @@
-import type { Activity, Frame, HudOptions, PacingMode, Split } from '../types';
+import type { Activity, Frame, HudOptions, PacingMode, RunnerInfo, Split } from '../types';
 import type { Palette, Theme } from '../themes';
 import type { ScreenLabel } from '../three/scene';
 import { withAlpha } from '../lib/color';
+import { getTintedLogo } from '../lib/logo';
 import {
   SPORT_LABELS,
   distanceLabel,
@@ -30,6 +31,7 @@ export interface HudInput {
   /** total length of the animation in seconds */
   duration: number;
   pacing: PacingMode;
+  runner: RunnerInfo;
   labels: ScreenLabel[];
 }
 
@@ -308,26 +310,167 @@ function drawSplitToast(p: Painter, input: HudInput, y: number, style: 'chip' | 
 }
 
 function drawWatermark(p: Painter, input: HudInput, y: number) {
-  if (!input.options.showWatermark) return;
-  const { palette, theme } = input;
-  p.text('ONE MORE STEP TO FINISH', p.W / 2, y, {
+  const { palette, theme, options } = input;
+  if (!options.showWatermark && !options.showLogo) return;
+
+  const label = 'ONE MORE STEP TO FINISH';
+  const mark = options.showLogo ? getTintedLogo(palette.textDim) : null;
+  const markSize = 34;
+  const gap = 12;
+
+  if (!mark) {
+    p.text(label, p.W / 2, y, {
+      font: theme.fonts.body,
+      size: 17,
+      weight: 600,
+      color: palette.textDim,
+      align: 'center',
+      baseline: 'middle',
+      alpha: 0.65,
+      tracking: 4,
+    });
+    return;
+  }
+
+  if (!options.showWatermark) {
+    p.ctx.save();
+    p.ctx.globalAlpha = 0.75;
+    p.ctx.drawImage(mark, p.W / 2 - markSize / 2, y - markSize / 2, markSize, markSize);
+    p.ctx.restore();
+    return;
+  }
+
+  // logo and signature centred as one lockup
+  const textW = p.measure(label, theme.fonts.body, 17, 600) + 4 * label.length * 0.25;
+  const total = markSize + gap + textW;
+  const x = (p.W - total) / 2;
+
+  p.ctx.save();
+  p.ctx.globalAlpha = 0.75;
+  p.ctx.drawImage(mark, x, y - markSize / 2, markSize, markSize);
+  p.ctx.restore();
+
+  p.text(label, x + markSize + gap, y, {
     font: theme.fonts.body,
     size: 17,
     weight: 600,
     color: palette.textDim,
-    align: 'center',
     baseline: 'middle',
     alpha: 0.65,
     tracking: 4,
   });
 }
 
+/**
+ * Who ran it: a race/training chip, the bib number and the athlete's name.
+ * Anchored from a corner so each theme can place it in its own layout.
+ */
+function drawIdentity(
+  p: Painter,
+  input: HudInput,
+  x: number,
+  y: number,
+  align: 'left' | 'right' | 'center' = 'left',
+) {
+  const { palette, theme, runner } = input;
+  if (!runner.show) return 0;
+
+  const isRace = runner.kind === 'race';
+  const chip = isRace ? 'YARIŞ' : 'ANTRENMAN';
+  const bib = isRace ? runner.bib.trim() : '';
+  const name = runner.athlete.trim();
+  const extras = [runner.category.trim(), runner.club.trim(), runner.placing.trim()]
+    .filter(Boolean)
+    .join('  ·  ');
+  if (!name && !bib && !extras) {
+    // still worth showing what kind of effort this was
+    if (!isRace && !runner.athlete) return 0;
+  }
+
+  const intro = easeOutCubic(clamp01((input.time - 0.25) / 0.7));
+  if (intro <= 0) return 0;
+
+  const chipH = 34;
+  const chipPad = 14;
+  const chipW = p.measure(chip, theme.fonts.body, 15, 700) + chipPad * 2 + 8;
+  const bibText = bib ? `No ${bib}` : '';
+  const bibW = bib ? p.measure(bibText, theme.fonts.mono, 15, 700) + chipPad * 2 : 0;
+  const gap = 8;
+  const rowW = chipW + (bib ? gap + bibW : 0);
+
+  let startX = x;
+  if (align === 'right') startX = x - rowW;
+  else if (align === 'center') startX = x - rowW / 2;
+
+  p.fillRoundRect(startX, y, chipW, chipH, 17, isRace ? palette.accent : palette.panel, intro);
+  if (!isRace) {
+    p.strokeRoundRect(startX, y, chipW, chipH, 17, withAlpha(palette.textDim, 0.5), 1.2, intro);
+  }
+  p.text(chip, startX + chipW / 2, y + chipH / 2 + 1, {
+    font: theme.fonts.body,
+    size: 15,
+    weight: 700,
+    color: isRace ? (palette.light ? '#ffffff' : '#180800') : palette.text,
+    align: 'center',
+    baseline: 'middle',
+    alpha: intro,
+    tracking: 2,
+  });
+
+  if (bib) {
+    const bx = startX + chipW + gap;
+    p.fillRoundRect(bx, y, bibW, chipH, 17, palette.panel, intro);
+    p.strokeRoundRect(bx, y, bibW, chipH, 17, withAlpha(palette.accent, 0.7), 1.4, intro);
+    p.text(bibText, bx + bibW / 2, y + chipH / 2 + 1, {
+      font: theme.fonts.mono,
+      size: 15,
+      weight: 700,
+      color: palette.text,
+      align: 'center',
+      baseline: 'middle',
+      alpha: intro,
+    });
+  }
+
+  let cursor = y + chipH + 30;
+  const textX = align === 'right' ? x : align === 'center' ? x : startX + 2;
+
+  if (name) {
+    p.text(name, textX, cursor, {
+      font: theme.fonts.body,
+      size: 24,
+      weight: 700,
+      color: palette.text,
+      align: align === 'center' ? 'center' : align,
+      alpha: intro,
+    });
+    cursor += 30;
+  }
+  if (extras) {
+    p.text(extras, textX, cursor, {
+      font: theme.fonts.body,
+      size: 16,
+      weight: 500,
+      color: palette.textDim,
+      align: align === 'center' ? 'center' : align,
+      alpha: intro * 0.9,
+    });
+    cursor += 24;
+  }
+  return cursor - y;
+}
+
 function headerLines(input: HudInput): { title: string; subtitle: string } {
-  const { options, activity } = input;
-  const title = options.title.trim() || activity.name;
+  const { options, activity, runner } = input;
+  const raceName = runner.show && runner.kind === 'race' ? runner.raceName.trim() : '';
+  const title = options.title.trim() || raceName || activity.name;
   const subtitle =
     options.subtitle.trim() ||
-    [SPORT_LABELS[activity.sport] ?? 'AKTİVİTE', formatDate(activity.startedAt)]
+    [
+      SPORT_LABELS[activity.sport] ?? 'AKTİVİTE',
+      runner.show ? runner.location.trim() : '',
+      formatDate(activity.startedAt),
+    ]
       .filter(Boolean)
       .join('  ·  ');
   return { title, subtitle };
@@ -362,6 +505,8 @@ function drawPulse(p: Painter, input: HudInput) {
     });
     p.line(M, 220, M + 120 * intro, 220, palette.accent, 3, intro);
   }
+
+  drawIdentity(p, input, M, 250);
 
   const bottom = p.H - 104;
 
@@ -451,6 +596,8 @@ function drawMinimal(p: Painter, input: HudInput) {
       tracking: 1,
     });
   }
+
+  drawIdentity(p, input, M, 208);
 
   const bottom = p.H - 130;
 
@@ -548,6 +695,8 @@ function drawTelemetry(p: Painter, input: HudInput) {
       { font: mono, size: 16, weight: 400, color: palette.textDim },
     );
   }
+
+  drawIdentity(p, input, M + 8, M + 128);
 
   // live data panel
   if (options.showStats) {
@@ -647,6 +796,8 @@ function drawPoster(p: Painter, input: HudInput) {
     p.line(p.W / 2 - 60 * intro, 268, p.W / 2 + 60 * intro, 268, palette.accent, 2, intro);
   }
 
+  drawIdentity(p, input, p.W / 2, 296, 'center');
+
   const bottom = p.H - 120;
   const stats = options.showStats ? buildStats(input, 4) : [];
   const gridTop = bottom - 190;
@@ -743,6 +894,8 @@ function drawBroadcast(p: Painter, input: HudInput) {
       tracking: 2,
     });
   }
+
+  drawIdentity(p, input, M + 4, 224);
 
   // lower third
   const barH = 168;
@@ -861,6 +1014,7 @@ function drawZen(p: Painter, input: HudInput) {
       alpha: intro * 0.85,
       tracking: 2,
     });
+    drawIdentity(p, input, p.W / 2, 196, 'center');
   }
 
   if (options.showProgressBar) {
@@ -899,6 +1053,8 @@ function drawChrono(p: Painter, input: HudInput) {
   }
 
   // the clock is the hero
+  drawIdentity(p, input, p.W / 2, 182, 'center');
+
   const clock = formatDuration(frame.elapsed, true);
   const bottom = p.H - 300;
   p.text(clock, p.W / 2, bottom, {
@@ -970,6 +1126,8 @@ function drawBib(p: Painter, input: HudInput) {
   const u = options.units;
 
   // race bib pinned to the bottom
+  drawIdentity(p, input, M, 200);
+
   const bibW = p.W - M * 2;
   const bibH = 300;
   const bibY = p.H - bibH - 110;
@@ -1088,6 +1246,8 @@ function drawCard(p: Painter, input: HudInput) {
   const intro = easeOutCubic(clamp01(input.time / 0.8));
   const { title, subtitle } = headerLines(input);
   const u = options.units;
+
+  drawIdentity(p, input, M, 150);
 
   const cardH = options.showElevationProfile ? 400 : 320;
   const cardY = p.H - cardH - 78;
@@ -1209,6 +1369,8 @@ function drawRetro(p: Painter, input: HudInput) {
     p.line(p.W / 2 - 150 * intro, 252, p.W / 2 + 150 * intro, 252, palette.accent, 3, intro);
   }
 
+  drawIdentity(p, input, p.W / 2, 280, 'center');
+
   const bottom = p.H - 270;
   if (options.showBigDistance) {
     shadow(`${formatDistance(frame.distance, u)} ${distanceLabel(u)}`, p.W / 2, bottom, 116, theme.fonts.display);
@@ -1272,6 +1434,8 @@ function drawTicker(p: Painter, input: HudInput) {
       alpha: intro,
     });
   }
+
+  drawIdentity(p, input, M, 186);
 
   // one-line data band along the bottom
   const bandH = 92;

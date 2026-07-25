@@ -84,6 +84,37 @@ Neon Gece, Solar Flare, Aurora, Blueprint, Mono Ink, Gün Batımı, Orman Patika
 Gün Işığı (açık tema) ve Sakura. Palet temadan bağımsız seçilir; her tema kendi imza paletiyle
 açılır ama istediğiniz kombinasyonu kurabilirsiniz.
 
+## Koşucu ve etkinlik künyesi
+
+Videoya koşucunun ve etkinliğin bilgileri işlenebilir. Etkinliği **antrenman** ya da **yarış**
+olarak işaretlersiniz; yarış seçtiğinizde yarış adı başlığa geçer ve göğüs numarası ayrı bir
+rozet olarak görünür.
+
+| Alan | Nerede görünür |
+| --- | --- |
+| Etkinlik türü | `YARIŞ` / `ANTRENMAN` rozeti |
+| Koşucu adı | rozetin altında |
+| Yarış adı | videonun başlığı |
+| Göğüs no | `No 1453` rozeti |
+| Derece, kategori, kulüp | koşucu adının altındaki satır |
+| Yer | alt başlıkta, tarihin yanında |
+
+Hepsi isteğe bağlıdır ve künyenin tamamı tek anahtarla kapatılabilir. On bir temanın hepsi
+künyeyi kendi düzenine uygun yere yerleştirir.
+
+## Topografya
+
+Rota çevresine, aktivitenin **kendi yükseklik örneklerinden** türetilen bir arazi yüzeyi
+eklenebilir:
+
+- **Eşyükselti** — topografik harita gibi eşyükselti eğrileri, her beşinci çizgi daha kalın
+- **Kabartma** — gölgelendirilmiş yüzey
+- **Yok** — düz zemin ızgarası
+
+Yükseklik alanı, rota noktalarından ters mesafe ağırlıklandırmasıyla hesaplanır. Yani bu
+*aktivitenin ima ettiği* araziden ibarettir, ölçüm verisi değildir: rotanın uzağında ölçülecek
+bir şey olmadığı için oralar interpolasyondur. Arazi yüksekliği ayrıca çarpanla ayarlanabilir.
+
 ## Sahne ve ekran ayarları
 
 - **Kamera:** Sinematik (geniş açılış → takip → kapanışta tüm rota), Takip, Yörünge, Kuş bakışı
@@ -91,6 +122,7 @@ açılır ama istediğiniz kombinasyonu kurabilirsiniz.
 - Yükseklik abartısı, iz kalınlığı, video süresi (8–90 sn), dönüş hızı
 - Zemin ızgarası, yükseklik perdesi, kilometre işaretleri, soluk tam rota, parçacıklar
 - Başlık/alt başlık metni, birim (km / mil) ve her veri bloğunun açık-kapalı durumu
+- Uygulama logosu ve imzası videonun altına işlenir; ikisi de ayrı ayrı kapatılabilir
 
 ## Video dışa aktarma
 
@@ -119,8 +151,8 @@ kodu tam çözünürlükte çalışır, dolayısıyla ekranda gördüğünüz ka
 ```
 src/
   data/        GPX & TCX ayrıştırma, Strava istemcisi, metrik hesapları, örnek rota
-  three/       enlem-boylam → dünya koordinatı izdüşümü, GLSL malzemeler, 3B sahne ve kamera
-  hud/         2B tuval üzerine çizilen tema bazlı veri katmanı
+  three/       izdüşüm, arazi yükseklik alanı, GLSL malzemeler, 3B sahne ve kamera
+  hud/         2B tuval üzerine çizilen tema bazlı veri katmanı, künye ve logo
   render/      3B kareyi ve HUD’u tek tuvalde birleştiren çizici
   export/      WebCodecs / MediaRecorder kaydedici
   themes/      tema ve palet tanımları
@@ -141,6 +173,8 @@ Birkaç ayrıntı:
   Dışa aktarmanın önizlemeyle birebir aynı çıkmasının nedeni budur.
 - **Örnekleme.** Aktivite başına tüm arama tabloları bir kez hesaplanır, böylece kare başına
   örnekleme bellek ayırmaz.
+- **Logo.** Tuvale çizilen logo, dışa aktarma başlamadan önce çözülür ve paletin rengine göre
+  bir kez boyanıp önbelleğe alınır; böylece çizim yolu eşzamanlı ve belirlenimci kalır.
 
 ## Yayınlama
 

@@ -1,4 +1,11 @@
-import type { CameraMode, HudOptions, PacingMode, SceneOptions, Units } from '../types';
+import type {
+  CameraMode,
+  HudOptions,
+  PacingMode,
+  SceneOptions,
+  TerrainMode,
+  Units,
+} from '../types';
 import { Field, Panel, Segmented, Slider, TextInput, Toggle } from './controls';
 
 export function ScenePanel({
@@ -50,6 +57,37 @@ export function ScenePanel({
         onChange={onDuration}
         format={(v) => `${v} sn`}
       />
+      <Field
+        label="Topografya"
+        hint={
+          options.terrain === 'none'
+            ? 'kapalı'
+            : 'rotanın yükseklik verisinden türetilir'
+        }
+      >
+        <Segmented<TerrainMode>
+          value={options.terrain}
+          onChange={(v) => set('terrain', v)}
+          options={[
+            { value: 'none', label: 'Yok' },
+            { value: 'contours', label: 'Eşyükselti' },
+            { value: 'relief', label: 'Kabartma' },
+          ]}
+        />
+      </Field>
+
+      {options.terrain !== 'none' && (
+        <Slider
+          label="Arazi yüksekliği"
+          value={options.terrainScale}
+          min={0.3}
+          max={3}
+          step={0.1}
+          onChange={(v) => set('terrainScale', v)}
+          format={(v) => `${v.toFixed(1)}×`}
+        />
+      )}
+
       <Slider
         label="Yükseklik abartısı"
         value={options.elevationScale}
@@ -89,7 +127,13 @@ export function ScenePanel({
           checked={options.showCurtain}
           onChange={(v) => set('showCurtain', v)}
         />
-        <Toggle label="Zemin ızgarası" checked={options.showGrid} onChange={(v) => set('showGrid', v)} />
+        {options.terrain === 'none' && (
+          <Toggle
+            label="Zemin ızgarası"
+            checked={options.showGrid}
+            onChange={(v) => set('showGrid', v)}
+          />
+        )}
         <Toggle
           label="Kilometre işaretleri"
           checked={options.showKmMarkers}
@@ -180,6 +224,7 @@ export function HudPanel({
           checked={options.showWatermark}
           onChange={(v) => set('showWatermark', v)}
         />
+        <Toggle label="Logo" checked={options.showLogo} onChange={(v) => set('showLogo', v)} />
       </div>
     </Panel>
   );

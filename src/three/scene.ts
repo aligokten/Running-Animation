@@ -23,7 +23,10 @@ import {
   particleVertex,
   ribbonFragment,
   routeVertex,
+  terrainFragment,
+  terrainVertex,
 } from './shaders';
+import { buildTerrain } from './terrain';
 
 const WORLD_SPAN = 200;
 const UP = new THREE.Vector3(0, 1, 0);
@@ -95,6 +98,7 @@ export class RunScene {
   private ghostRibbonMat: THREE.ShaderMaterial | null = null;
   private ghostCurtainMat: THREE.ShaderMaterial | null = null;
   private groundMat: THREE.ShaderMaterial | null = null;
+  private terrainMat: THREE.ShaderMaterial | null = null;
   private particleMat: THREE.ShaderMaterial | null = null;
   private beamMat: THREE.ShaderMaterial | null = null;
 
@@ -176,7 +180,9 @@ export class RunScene {
     const needsRebuild =
       !this.options ||
       this.options.elevationScale !== options.elevationScale ||
-      this.options.trailWidth !== options.trailWidth;
+      this.options.trailWidth !== options.trailWidth ||
+      this.options.terrain !== options.terrain ||
+      this.options.terrainScale !== options.terrainScale;
     this.options = options;
     if (needsRebuild) this.rebuild();
     else this.applyVisibility();
@@ -191,7 +197,10 @@ export class RunScene {
     if (this.beam) this.beam.visible = this.theme.scene.beam;
     const ground = this.decorGroup.getObjectByName('ground');
     if (ground) {
-      ground.visible = this.options.showGrid && this.theme.scene.gridStyle !== 'none';
+      ground.visible =
+        this.options.terrain === 'none' &&
+        this.options.showGrid &&
+        this.theme.scene.gridStyle !== 'none';
     }
     const curtain = this.routeGroup.getObjectByName('curtain');
     if (curtain) curtain.visible = this.options.showCurtain;
@@ -328,6 +337,47 @@ export class RunScene {
     ground.position.y = path.baseY;
     ground.renderOrder = 0;
     this.decorGroup.add(ground);
+
+    // ---- terrain -----------------------------------------------------------
+    if (options.terrain !== 'none') {
+      const key = `${this.activity.name}|${this.activity.totalDistance.toFixed(0)}|${options.elevationScale}`;
+      const terrain = buildTerrain(path, options.terrainScale, key);
+      this.track(terrain.geometry);
+
+      // aim for roughly a dozen contour lines across the relief on screen
+      const relief = Math.max(0.001, terrain.maxY - terrain.minY);
+      this.terrainMat = this.track(
+        new THREE.ShaderMaterial({
+          uniforms: {
+            uLow: { value: new THREE.Color(palette.ground) },
+            uHigh: {
+              value: new THREE.Color(palette.grid).lerp(
+                new THREE.Color(palette.textDim),
+                options.terrain === 'relief' ? 0.55 : 0.15,
+              ),
+            },
+            uLine: { value: new THREE.Color(palette.textDim) },
+            uInterval: { value: relief / 12 },
+            uMinY: { value: terrain.minY },
+            uMaxY: { value: terrain.maxY },
+            uRadius: { value: terrain.extent },
+            uOpacity: { value: palette.light ? 0.9 : 0.8 },
+            uMode: { value: options.terrain === 'relief' ? 1 : 0 },
+          },
+          vertexShader: terrainVertex,
+          fragmentShader: terrainFragment,
+          transparent: true,
+          depthWrite: options.terrain === 'relief',
+          side: THREE.DoubleSide,
+        }),
+      );
+      const mesh = new THREE.Mesh(terrain.geometry, this.terrainMat);
+      mesh.name = 'terrain';
+      mesh.renderOrder = 0;
+      this.decorGroup.add(mesh);
+      // the flat grid would only fight the surface for attention
+      ground.visible = false;
+    }
 
     // ---- particles ---------------------------------------------------------
     const particleCount = 320;

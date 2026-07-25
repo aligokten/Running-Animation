@@ -82,6 +82,31 @@ export type CameraMode = 'cinematic' | 'follow' | 'orbit' | 'topdown';
 
 export type PacingMode = 'distance' | 'time';
 
+/**
+ * Terrain built around the route.
+ * 'contours' draws a topographic map, 'relief' a shaded surface.
+ */
+export type TerrainMode = 'none' | 'contours' | 'relief';
+
+export type ActivityKind = 'race' | 'training';
+
+/** Who ran it, and what it was. Every field is optional. */
+export interface RunnerInfo {
+  kind: ActivityKind;
+  athlete: string;
+  club: string;
+  /** race name, only used when kind is 'race' */
+  raceName: string;
+  /** bib number */
+  bib: string;
+  /** age group or category */
+  category: string;
+  /** finishing place, e.g. "12/430" */
+  placing: string;
+  location: string;
+  show: boolean;
+}
+
 export interface SceneOptions {
   cameraMode: CameraMode;
   pacing: PacingMode;
@@ -93,6 +118,10 @@ export interface SceneOptions {
   showCurtain: boolean;
   showGrid: boolean;
   showKmMarkers: boolean;
+  /** terrain built around the route from its own elevation samples */
+  terrain: TerrainMode;
+  /** vertical exaggeration of the terrain, relative to the route's */
+  terrainScale: number;
   /** background particle field */
   showParticles: boolean;
   trailWidth: number;
@@ -109,6 +138,8 @@ export interface HudOptions {
   showProgressBar: boolean;
   showSplitToasts: boolean;
   showWatermark: boolean;
+  /** draw the app logo alongside the signature */
+  showLogo: boolean;
   showHeartRate: boolean;
   units: Units;
 }

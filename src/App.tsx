@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Activity, ExportSettings, HudOptions, SceneOptions } from './types';
+import type {
+  Activity,
+  ExportSettings,
+  HudOptions,
+  RunnerInfo,
+  SceneOptions,
+} from './types';
 import { createDemoActivity } from './data/demo';
 import { MovieRenderer } from './render/movie';
 import { ensureFontsLoaded, getPalette, getTheme } from './themes';
 import { AbortedError, downloadBlob, recordVideo, safeFileName } from './export/recorder';
+import { loadLogo } from './lib/logo';
+import { RunnerPanel } from './ui/RunnerPanel';
 import { DataPanel } from './ui/DataPanel';
 import { ExportPanel } from './ui/ExportPanel';
 import { HudPanel, ScenePanel } from './ui/ScenePanel';
@@ -19,6 +27,8 @@ const DEFAULT_SCENE: SceneOptions = {
   showGrid: true,
   showKmMarkers: true,
   showParticles: true,
+  terrain: 'contours',
+  terrainScale: 1,
   trailWidth: 1,
   rotateSpeed: 1,
 };
@@ -33,8 +43,21 @@ const DEFAULT_HUD: HudOptions = {
   showProgressBar: true,
   showSplitToasts: true,
   showWatermark: true,
+  showLogo: true,
   showHeartRate: true,
   units: 'metric',
+};
+
+const DEFAULT_RUNNER: RunnerInfo = {
+  kind: 'training',
+  athlete: '',
+  club: '',
+  raceName: '',
+  bib: '',
+  category: '',
+  placing: '',
+  location: '',
+  show: true,
 };
 
 const DEFAULT_EXPORT: ExportSettings = {
@@ -58,6 +81,7 @@ export default function App() {
   const [paletteId, setPaletteId] = useState('neon-night');
   const [sceneOptions, setSceneOptions] = useState<SceneOptions>(DEFAULT_SCENE);
   const [hudOptions, setHudOptions] = useState<HudOptions>(DEFAULT_HUD);
+  const [runner, setRunner] = useState<RunnerInfo>(DEFAULT_RUNNER);
   const [exportSettings, setExportSettings] = useState<ExportSettings>(DEFAULT_EXPORT);
 
   const [playing, setPlaying] = useState(true);
@@ -93,7 +117,7 @@ export default function App() {
   // its simulated remount and leave the preview with a dead context.
   useEffect(() => {
     setActivity(createDemoActivity());
-    void ensureFontsLoaded().then(() => setFontsReady(true));
+    void Promise.all([ensureFontsLoaded(), loadLogo()]).then(() => setFontsReady(true));
   }, []);
 
   // Picking a theme moves to its signature palette, unless the user chose one.
@@ -115,7 +139,7 @@ export default function App() {
   useEffect(() => {
     if (!activity) return;
     renderer.setSize(preview.width, preview.height);
-    renderer.setState({ activity, theme, palette, sceneOptions, hudOptions, duration });
+    renderer.setState({ activity, theme, palette, sceneOptions, hudOptions, runner, duration });
     if (!exportingRef.current) renderer.drawAt(timeRef.current);
   }, [
     renderer,
@@ -124,6 +148,7 @@ export default function App() {
     palette,
     sceneOptions,
     hudOptions,
+    runner,
     duration,
     preview.width,
     preview.height,
@@ -194,7 +219,7 @@ export default function App() {
     abortRef.current = controller;
 
     try {
-      await ensureFontsLoaded();
+      await Promise.all([ensureFontsLoaded(), loadLogo()]);
       renderer.setSize(exportSettings.width, exportSettings.height);
 
       const result = await recordVideo({
@@ -242,7 +267,7 @@ export default function App() {
     setExportMessage(null);
     exportingRef.current = true;
     try {
-      await ensureFontsLoaded();
+      await Promise.all([ensureFontsLoaded(), loadLogo()]);
       renderer.setSize(exportSettings.width, exportSettings.height);
       renderer.drawAt(timeRef.current);
       const blob = await new Promise<Blob | null>((resolve) =>
@@ -293,6 +318,7 @@ export default function App() {
             onTheme={chooseTheme}
             onPalette={setPaletteId}
           />
+          <RunnerPanel runner={runner} onChange={setRunner} />
           <ScenePanel
             options={sceneOptions}
             onChange={setSceneOptions}

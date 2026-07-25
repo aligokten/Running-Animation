@@ -1,4 +1,4 @@
-import type { Activity, HudOptions, SceneOptions } from '../types';
+import type { Activity, HudOptions, RunnerInfo, SceneOptions } from '../types';
 import type { Palette, Theme } from '../themes';
 import { createSampler, type Sampler } from '../data/activity';
 import { RunScene } from '../three/scene';
@@ -10,6 +10,7 @@ export interface MovieState {
   palette: Palette;
   sceneOptions: SceneOptions;
   hudOptions: HudOptions;
+  runner: RunnerInfo;
   /** total animation length in seconds */
   duration: number;
 }
@@ -108,6 +109,7 @@ export class MovieRenderer {
       time,
       duration: state.duration,
       pacing: state.sceneOptions.pacing,
+      runner: state.runner,
       labels: this.scene.labels(progress),
     });
   }
